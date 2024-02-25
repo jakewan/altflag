@@ -1,4 +1,4 @@
-module github.com/cbsinteractive/jakewan/altflag
+module github.com/jakewan/altflag
 
 go 1.22.0
 

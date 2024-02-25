@@ -3,7 +3,7 @@ package altflag_test
 import (
 	"testing"
 
-	"github.com/cbsinteractive/jakewan/altflag"
+	"github.com/jakewan/altflag"
 	"github.com/stretchr/testify/assert"
 )
 
