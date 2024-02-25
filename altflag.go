@@ -12,13 +12,6 @@ type TargetVariable[T any] interface {
 }
 
 func newTargetVariable[T any](target *T, displayName string, shortFlag string, usage string) TargetVariable[T] {
-	displayName = strings.TrimLeft(displayName, "-")
-	for {
-		if strings.HasPrefix(displayName, "--") {
-			break
-		}
-		displayName = fmt.Sprintf("-%s", displayName)
-	}
 	return &targetVariable[T]{
 		displayName: displayName,
 		shortFlag:   shortFlag,
@@ -52,8 +45,8 @@ func (t *targetVariable[T]) SetValue(value T) {
 
 type FlagSet interface {
 	Name() string
-	StringVar(target *string, displayName string, shortFlag string, usage string) TargetVariable[string]
-	BoolVar(target *bool, displayName string, shortFlag string, usage string) TargetVariable[bool]
+	StringVar(target *string, displayName string, shortFlag string, usage string) (TargetVariable[string], error)
+	BoolVar(target *bool, displayName string, shortFlag string, usage string) (TargetVariable[bool], error)
 	Parse(args []string) error
 }
 
@@ -136,6 +129,32 @@ func (f *flagSet) assertSingleMatch(givenArg string) error {
 	return nil
 }
 
+func (f *flagSet) assertZeroMatches(givenArg string) error {
+	normalizedGivenArg := normalizeArgName(givenArg)
+	matches := []string{}
+	for _, v := range f.stringVars {
+		displayName := v.DisplayName()
+		fmt.Printf("Current configured display name: %s\n", displayName)
+		normalizedDisplayName := normalizeArgName(displayName)
+		if strings.HasPrefix(normalizedDisplayName, normalizedGivenArg) {
+			matches = append(matches, displayName)
+		}
+	}
+	for _, v := range f.boolVars {
+		displayName := v.DisplayName()
+		fmt.Printf("Current configured display name: %s\n", displayName)
+		normalizedDisplayName := normalizeArgName(displayName)
+		if strings.HasPrefix(normalizedDisplayName, normalizedGivenArg) {
+			matches = append(matches, displayName)
+		}
+	}
+	fmt.Printf("Matches: %v\n", matches)
+	if len(matches) > 0 {
+		return fmt.Errorf("argument %s is already configured", givenArg)
+	}
+	return nil
+}
+
 func (f *flagSet) findStringVar(givenArg string) (TargetVariable[string], error) {
 	if err := f.assertSingleMatch(givenArg); err != nil {
 		return nil, err
@@ -151,19 +170,38 @@ func (f *flagSet) findStringVar(givenArg string) (TargetVariable[string], error)
 }
 
 // BoolVar implements FlagSet.
-func (f *flagSet) BoolVar(target *bool, displayName string, shortFlag string, usage string) TargetVariable[bool] {
+func (f *flagSet) BoolVar(target *bool, displayName string, shortFlag string, usage string) (TargetVariable[bool], error) {
+	displayName = normalizeConfiguredDisplayName(displayName)
+	if err := f.assertZeroMatches(displayName); err != nil {
+		return nil, err
+	}
 	t := newTargetVariable[bool](target, displayName, shortFlag, usage)
 	f.boolVars = append(f.boolVars, t)
-	return t
+	return t, nil
 }
 
 // StringVar implements FlagSet.
-func (f *flagSet) StringVar(target *string, displayName string, shortFlag string, usage string) TargetVariable[string] {
+func (f *flagSet) StringVar(target *string, displayName string, shortFlag string, usage string) (TargetVariable[string], error) {
+	displayName = normalizeConfiguredDisplayName(displayName)
+	if err := f.assertZeroMatches(displayName); err != nil {
+		return nil, err
+	}
 	t := newTargetVariable[string](target, displayName, shortFlag, usage)
 	f.stringVars = append(f.stringVars, t)
-	return t
+	return t, nil
 }
 
 func normalizeArgName(givenArg string) string {
 	return strings.ToLower(strings.TrimLeft(givenArg, "-"))
+}
+
+func normalizeConfiguredDisplayName(displayName string) string {
+	displayName = strings.TrimLeft(displayName, "-")
+	for {
+		if strings.HasPrefix(displayName, "--") {
+			break
+		}
+		displayName = fmt.Sprintf("-%s", displayName)
+	}
+	return displayName
 }

@@ -13,30 +13,38 @@ func newAltFlagTestMultiStringVar(
 	usages []string,
 	clargs []string,
 	expectedValues []*string,
-	errorStringContaining *string) altFlagTest {
+	setupErrorStringContaining *string,
+	parseErrorStringContaining *string) altFlagTest {
 	vars := []*string{}
 	for range len(displayNames) {
 		vars = append(vars, ptr(""))
 	}
 	return &altFlagTestMultiStringVar{
-		displayNames:          displayNames,
-		shortFlags:            shortFlags,
-		usages:                usages,
-		myVars:                vars,
-		testClargs:            clargs,
-		expectedValues:        expectedValues,
-		errorStringContaining: errorStringContaining,
+		displayNames:               displayNames,
+		shortFlags:                 shortFlags,
+		usages:                     usages,
+		myVars:                     vars,
+		testClargs:                 clargs,
+		expectedValues:             expectedValues,
+		setupErrorStringContaining: setupErrorStringContaining,
+		parseErrorStringContaining: parseErrorStringContaining,
 	}
 }
 
 type altFlagTestMultiStringVar struct {
-	displayNames          []string
-	shortFlags            []string
-	usages                []string
-	myVars                []*string
-	testClargs            []string
-	expectedValues        []*string
-	errorStringContaining *string
+	displayNames               []string
+	shortFlags                 []string
+	usages                     []string
+	myVars                     []*string
+	testClargs                 []string
+	expectedValues             []*string
+	setupErrorStringContaining *string
+	parseErrorStringContaining *string
+}
+
+// expectedSetupErrorStringContaining implements altFlagTest.
+func (aft *altFlagTestMultiStringVar) expectedSetupErrorStringContaining() *string {
+	return aft.setupErrorStringContaining
 }
 
 // clargs implements altFlagTest.
@@ -44,19 +52,22 @@ func (aft *altFlagTestMultiStringVar) clargs() []string {
 	return aft.testClargs
 }
 
-// expectedErrorStringContaining implements altFlagTest.
-func (aft *altFlagTestMultiStringVar) expectedErrorStringContaining() *string {
-	return aft.errorStringContaining
+// expectedParseErrorStringContaining implements altFlagTest.
+func (aft *altFlagTestMultiStringVar) expectedParseErrorStringContaining() *string {
+	return aft.parseErrorStringContaining
 }
 
 // flagSetName implements altFlagTest.
 func (*altFlagTestMultiStringVar) flagSetName() *string { return nil }
 
 // setupFlagSet implements altFlagTest.
-func (aft *altFlagTestMultiStringVar) setupFlagSet(f altflag.FlagSet) {
+func (aft *altFlagTestMultiStringVar) setupFlagSet(f altflag.FlagSet) error {
 	for i := range len(aft.displayNames) {
-		f.StringVar(aft.myVars[i], aft.displayNames[i], aft.shortFlags[i], aft.usages[i])
+		if _, err := f.StringVar(aft.myVars[i], aft.displayNames[i], aft.shortFlags[i], aft.usages[i]); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // verify implements altFlagTest.

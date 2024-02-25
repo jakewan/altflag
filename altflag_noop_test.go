@@ -7,29 +7,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newAltFlagTestNoop() altFlagTest {
-	return &altFlagTestNoop{}
-}
+func newAltFlagTestNoop() altFlagTest { return &altFlagTestNoop{} }
 
 type altFlagTestNoop struct{}
 
-// expectedErrorStringContaining implements altFlagTest.
-func (*altFlagTestNoop) expectedErrorStringContaining() *string {
-	return nil
-}
+// expectedSetupErrorStringContaining implements altFlagTest.
+func (*altFlagTestNoop) expectedSetupErrorStringContaining() *string { return nil }
+
+// expectedParseErrorStringContaining implements altFlagTest.
+func (*altFlagTestNoop) expectedParseErrorStringContaining() *string { return nil }
 
 // setupFlagSet implements altFlagTest.
-func (*altFlagTestNoop) setupFlagSet(f altflag.FlagSet) {}
+func (*altFlagTestNoop) setupFlagSet(f altflag.FlagSet) error { return nil }
 
 // clargs implements altFlagTest.
-func (*altFlagTestNoop) clargs() []string {
-	return []string{}
-}
+func (*altFlagTestNoop) clargs() []string { return []string{} }
 
 // flagSetName implements altFlagTest.
-func (*altFlagTestNoop) flagSetName() *string {
-	return nil
-}
+func (*altFlagTestNoop) flagSetName() *string { return nil }
 
 // verify implements altFlagTest.
 func (*altFlagTestNoop) verify(t *testing.T, f altflag.FlagSet) {

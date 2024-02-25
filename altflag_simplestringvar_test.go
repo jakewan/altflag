@@ -13,30 +13,38 @@ func newAltFlagTestSimpleStringVar(
 	usage string,
 	clargs []string,
 	expectedValue *string,
-	errorStringContaining *string) altFlagTest {
+	setupErrorStringContaining *string,
+	parseErrorStringContaining *string) altFlagTest {
 	return &altFlagTestSimpleStringVar{
-		displayName:           displayName,
-		shortFlag:             shortFlag,
-		usage:                 usage,
-		testClargs:            clargs,
-		expectedValue:         expectedValue,
-		errorStringContaining: errorStringContaining,
+		displayName:                displayName,
+		shortFlag:                  shortFlag,
+		usage:                      usage,
+		testClargs:                 clargs,
+		expectedValue:              expectedValue,
+		setupErrorStringContaining: setupErrorStringContaining,
+		parseErrorStringContaining: parseErrorStringContaining,
 	}
 }
 
 type altFlagTestSimpleStringVar struct {
-	displayName           string
-	shortFlag             string
-	usage                 string
-	myVar                 string
-	testClargs            []string
-	expectedValue         *string
-	errorStringContaining *string
+	displayName                string
+	shortFlag                  string
+	usage                      string
+	myVar                      string
+	testClargs                 []string
+	expectedValue              *string
+	setupErrorStringContaining *string
+	parseErrorStringContaining *string
 }
 
-// expectedErrorStringContaining implements altFlagTest.
-func (aft *altFlagTestSimpleStringVar) expectedErrorStringContaining() *string {
-	return aft.errorStringContaining
+// expectedSetupErrorStringContaining implements altFlagTest.
+func (aft *altFlagTestSimpleStringVar) expectedSetupErrorStringContaining() *string {
+	return aft.setupErrorStringContaining
+}
+
+// expectedParseErrorStringContaining implements altFlagTest.
+func (aft *altFlagTestSimpleStringVar) expectedParseErrorStringContaining() *string {
+	return aft.parseErrorStringContaining
 }
 
 // clargs implements altFlagTest.
@@ -48,8 +56,9 @@ func (aft *altFlagTestSimpleStringVar) clargs() []string {
 func (*altFlagTestSimpleStringVar) flagSetName() *string { return nil }
 
 // setupFlagSet implements altFlagTest.
-func (aft *altFlagTestSimpleStringVar) setupFlagSet(f altflag.FlagSet) {
-	f.StringVar(&aft.myVar, aft.displayName, aft.shortFlag, aft.usage)
+func (aft *altFlagTestSimpleStringVar) setupFlagSet(f altflag.FlagSet) error {
+	_, err := f.StringVar(&aft.myVar, aft.displayName, aft.shortFlag, aft.usage)
+	return err
 }
 
 // verify implements altFlagTest.
