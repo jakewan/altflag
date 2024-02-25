@@ -40,6 +40,17 @@ func TestParse(t *testing.T) {
 			nil,
 			ptr("argument --bar didn't match any known flags"),
 		),
+		"string var multimatch": newAltFlagTestMultiStringVar(
+			[]string{"foobaz", "foobar"},
+			[]string{"a", "b"},
+			[]string{"Some usage string", "Some other usage string"},
+			[]string{
+				"--foo",
+				"some-value",
+			},
+			nil,
+			ptr("argument --foo matched multiple flags: --foobar, --foobaz"),
+		),
 	} {
 		t.Run(name, newAltFlagTestFunc(cfg))
 	}

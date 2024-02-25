@@ -1,7 +1,6 @@
 package altflag
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -13,6 +12,13 @@ type TargetVariable[T any] interface {
 }
 
 func newTargetVariable[T any](target *T, displayName string, shortFlag string, usage string) TargetVariable[T] {
+	displayName = strings.TrimLeft(displayName, "-")
+	for {
+		if strings.HasPrefix(displayName, "--") {
+			break
+		}
+		displayName = fmt.Sprintf("-%s", displayName)
+	}
 	return &targetVariable[T]{
 		displayName: displayName,
 		shortFlag:   shortFlag,
@@ -84,14 +90,9 @@ func (f *flagSet) Parse(args []string) error {
 		if strings.HasPrefix(currentArg, "-") {
 			// Currently looking at a flag.
 			fmt.Printf("Current arg index: %d\n", currentArgIdx)
-			currentArgName := strings.TrimLeft(currentArg, "-")
-			fmt.Printf("Current arg: %s\n", currentArgName)
-
-			stringVar, err := f.findStringVar(strings.ToLower(currentArgName))
+			fmt.Printf("Current arg: %s\n", currentArg)
+			stringVar, err := f.findStringVar(currentArg)
 			if err != nil {
-				if errors.Is(err, errVarLookupZeroMatch) {
-					return fmt.Errorf("argument %s didn't match any known flags", currentArg)
-				}
 				return err
 			}
 			if stringVar != nil {
@@ -106,33 +107,40 @@ func (f *flagSet) Parse(args []string) error {
 	return nil
 }
 
-func (f *flagSet) assertSingleMatch(lowerCaseName string) error {
-	matchCount := 0
+func (f *flagSet) assertSingleMatch(givenArg string) error {
+	normalizedGivenArg := normalizeArgName(givenArg)
+	matches := []string{}
 	for _, v := range f.stringVars {
-		currentNameLower := strings.ToLower(v.DisplayName())
-		if strings.HasPrefix(currentNameLower, lowerCaseName) {
-			matchCount += 1
+		displayName := v.DisplayName()
+		fmt.Printf("Current configured display name: %s\n", displayName)
+		normalizedDisplayName := normalizeArgName(displayName)
+		if strings.HasPrefix(normalizedDisplayName, normalizedGivenArg) {
+			matches = append(matches, displayName)
 		}
 	}
 	for _, v := range f.boolVars {
-		currentNameLower := strings.ToLower(v.DisplayName())
-		if strings.HasPrefix(currentNameLower, lowerCaseName) {
-			matchCount += 1
+		displayName := v.DisplayName()
+		fmt.Printf("Current configured display name: %s\n", displayName)
+		normalizedDisplayName := normalizeArgName(displayName)
+		if strings.HasPrefix(normalizedDisplayName, normalizedGivenArg) {
+			matches = append(matches, displayName)
 		}
 	}
-	if matchCount > 1 {
-		return errVarLookupMultipleMatches
+	fmt.Printf("Matches: %v\n", matches)
+	if len(matches) > 1 {
+		return newErrEnvVarLookupMultipleMatch(givenArg, matches)
 	}
-	if matchCount == 0 {
-		return errVarLookupZeroMatch
+	if len(matches) == 0 {
+		return newErrEnvVarLookupZeroMatch(givenArg)
 	}
 	return nil
 }
 
-func (f *flagSet) findStringVar(lowerCaseName string) (TargetVariable[string], error) {
-	if err := f.assertSingleMatch(lowerCaseName); err != nil {
+func (f *flagSet) findStringVar(givenArg string) (TargetVariable[string], error) {
+	if err := f.assertSingleMatch(givenArg); err != nil {
 		return nil, err
 	}
+	lowerCaseName := strings.ToLower(givenArg)
 	for _, v := range f.stringVars {
 		currentNameLower := strings.ToLower(v.DisplayName())
 		if strings.HasPrefix(currentNameLower, lowerCaseName) {
@@ -154,4 +162,8 @@ func (f *flagSet) StringVar(target *string, displayName string, shortFlag string
 	t := newTargetVariable[string](target, displayName, shortFlag, usage)
 	f.stringVars = append(f.stringVars, t)
 	return t
+}
+
+func normalizeArgName(givenArg string) string {
+	return strings.ToLower(strings.TrimLeft(givenArg, "-"))
 }
