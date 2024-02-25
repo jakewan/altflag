@@ -64,6 +64,16 @@ func TestParse(t *testing.T) {
 			ptr("argument --foo is already configured"),
 			nil,
 		),
+		"count var": newAltFlagTestCountVar(
+			"verbose",
+			"v",
+			"Increase verbosity (may be specified up to 3 times)",
+			3,
+			[]string{"--verbose", "--verbose", "--verbose"},
+			3,
+			nil,
+			nil,
+		),
 	} {
 		t.Run(name, newAltFlagTestFunc(cfg))
 	}
