@@ -6,7 +6,18 @@ import (
 )
 
 type TargetVariable[T any] interface {
+	DisplayName() string
 	SetDefault(defaultValue T)
+	SetValue(value T)
+}
+
+func newTargetVariable[T any](target *T, displayName string, shortFlag string, usage string) TargetVariable[T] {
+	return &targetVariable[T]{
+		displayName: displayName,
+		shortFlag:   shortFlag,
+		t:           target,
+		usage:       usage,
+	}
 }
 
 type targetVariable[T any] struct {
@@ -17,9 +28,19 @@ type targetVariable[T any] struct {
 	usage        string
 }
 
+// DisplayName implements TargetVariable.
+func (t *targetVariable[T]) DisplayName() string {
+	return t.displayName
+}
+
 // SetDefault implements TargetVariable.
 func (t *targetVariable[T]) SetDefault(defaultValue T) {
 	t.defaultValue = defaultValue
+}
+
+// SetValue implements TargetVariable.
+func (t *targetVariable[T]) SetValue(value T) {
+	*t.t = value
 }
 
 type FlagSet interface {
@@ -60,38 +81,73 @@ func (f *flagSet) Parse(args []string) error {
 	fmt.Printf("Arg length: %d\n", len(args))
 	for currentArgIdx, currentArg := range args {
 		if strings.HasPrefix(currentArg, "-") {
+			// Currently looking at a flag.
 			fmt.Printf("Current arg index: %d\n", currentArgIdx)
 			currentArgName := strings.TrimLeft(currentArg, "-")
 			fmt.Printf("Current arg: %s\n", currentArgName)
-			if len(args) > currentArgIdx+1 {
-				nextArg := args[currentArgIdx+1]
-				fmt.Printf("Current arg value as string: %s\n", nextArg)
+
+			stringVar, err := f.findStringVar(strings.ToLower(currentArgName))
+			if err != nil {
+				return err
+			}
+			if stringVar != nil {
+				if len(args) > currentArgIdx+1 {
+					nextArg := args[currentArgIdx+1]
+					fmt.Printf("Current arg value as string: %s\n", nextArg)
+					stringVar.SetValue(nextArg)
+				}
 			}
 		}
 	}
 	return nil
 }
 
+func (f *flagSet) assertSingleMatch(lowerCaseName string) error {
+	matchCount := 0
+	for _, v := range f.stringVars {
+		currentNameLower := strings.ToLower(v.DisplayName())
+		if strings.HasPrefix(currentNameLower, lowerCaseName) {
+			matchCount += 1
+		}
+	}
+	for _, v := range f.boolVars {
+		currentNameLower := strings.ToLower(v.DisplayName())
+		if strings.HasPrefix(currentNameLower, lowerCaseName) {
+			matchCount += 1
+		}
+	}
+	if matchCount > 1 {
+		return errVarLookupMultipleMatches
+	}
+	if matchCount == 0 {
+		return errVarLookupZeroMatch
+	}
+	return nil
+}
+
+func (f *flagSet) findStringVar(lowerCaseName string) (TargetVariable[string], error) {
+	if err := f.assertSingleMatch(lowerCaseName); err != nil {
+		return nil, err
+	}
+	for _, v := range f.stringVars {
+		currentNameLower := strings.ToLower(v.DisplayName())
+		if strings.HasPrefix(currentNameLower, lowerCaseName) {
+			return v, nil
+		}
+	}
+	return nil, nil
+}
+
 // BoolVar implements FlagSet.
 func (f *flagSet) BoolVar(target *bool, displayName string, shortFlag string, usage string) TargetVariable[bool] {
-	t := &targetVariable[bool]{
-		displayName: displayName,
-		shortFlag:   shortFlag,
-		t:           target,
-		usage:       usage,
-	}
+	t := newTargetVariable[bool](target, displayName, shortFlag, usage)
 	f.boolVars = append(f.boolVars, t)
 	return t
 }
 
 // StringVar implements FlagSet.
 func (f *flagSet) StringVar(target *string, displayName string, shortFlag string, usage string) TargetVariable[string] {
-	t := &targetVariable[string]{
-		displayName: displayName,
-		shortFlag:   shortFlag,
-		t:           target,
-		usage:       usage,
-	}
+	t := newTargetVariable[string](target, displayName, shortFlag, usage)
 	f.stringVars = append(f.stringVars, t)
 	return t
 }

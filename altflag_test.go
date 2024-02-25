@@ -26,6 +26,7 @@ func TestParse(t *testing.T) {
 				"--someStringVariable",
 				"some-string-value",
 			},
+			"some-string-value",
 			nil,
 		),
 	} {

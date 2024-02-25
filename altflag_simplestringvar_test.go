@@ -12,12 +12,14 @@ func newAltFlagTestSimpleStringVar(
 	shortFlag string,
 	usage string,
 	clargs []string,
+	expectedValue string,
 	expectedError error) altFlagTest {
 	return &altFlagTestSimpleStringVar{
 		displayName:       displayName,
 		shortFlag:         shortFlag,
 		usage:             usage,
 		testClargs:        clargs,
+		expectedValue:     expectedValue,
 		testExpectedError: expectedError,
 	}
 }
@@ -26,9 +28,10 @@ type altFlagTestSimpleStringVar struct {
 	displayName       string
 	shortFlag         string
 	usage             string
-	testExpectedError error
 	myVar             string
 	testClargs        []string
+	expectedValue     string
+	testExpectedError error
 }
 
 // clargs implements altFlagTest.
@@ -51,5 +54,5 @@ func (aft *altFlagTestSimpleStringVar) setupFlagSet(f altflag.FlagSet) {
 
 // verify implements altFlagTest.
 func (aft *altFlagTestSimpleStringVar) verify(t *testing.T, f altflag.FlagSet) {
-	assert.Equal(t, aft.myVar, "some-string-value")
+	assert.Equal(t, aft.myVar, aft.expectedValue)
 }
