@@ -9,7 +9,7 @@ import (
 
 type altFlagTest interface {
 	clargs() []string
-	expectedError() error
+	expectedErrorStringContaining() *string
 	flagSetName() *string
 	setupFlagSet(f altflag.FlagSet)
 	verify(t *testing.T, f altflag.FlagSet)
@@ -26,8 +26,19 @@ func TestParse(t *testing.T) {
 				"--someStringVariable",
 				"some-string-value",
 			},
-			"some-string-value",
+			ptr("some-string-value"),
 			nil,
+		),
+		"simple string var no match": newAltFlagTestSimpleStringVar(
+			"foo",
+			"f",
+			"Some usage string",
+			[]string{
+				"--bar",
+				"some-value",
+			},
+			nil,
+			ptr("argument --bar didn't match any known flags"),
 		),
 	} {
 		t.Run(name, newAltFlagTestFunc(cfg))
@@ -43,10 +54,10 @@ func newAltFlagTestFunc(cfg altFlagTest) func(t *testing.T) {
 		flagSet := altflag.NewFlagSet(*flagSetName)
 		cfg.setupFlagSet(flagSet)
 		err := flagSet.Parse(cfg.clargs())
-		expectedError := cfg.expectedError()
-		if expectedError != nil {
+		expectedErrorStringContaining := cfg.expectedErrorStringContaining()
+		if expectedErrorStringContaining != nil {
 			if assert.Error(t, err, "Parse should return an error") {
-				assert.Equal(t, cfg.expectedError, err)
+				assert.ErrorContains(t, err, *expectedErrorStringContaining)
 			}
 		} else {
 			assert.Nil(t, err, "Parse should return nil")

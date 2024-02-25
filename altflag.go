@@ -1,6 +1,7 @@
 package altflag
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -88,6 +89,9 @@ func (f *flagSet) Parse(args []string) error {
 
 			stringVar, err := f.findStringVar(strings.ToLower(currentArgName))
 			if err != nil {
+				if errors.Is(err, errVarLookupZeroMatch) {
+					return fmt.Errorf("argument %s didn't match any known flags", currentArg)
+				}
 				return err
 			}
 			if stringVar != nil {

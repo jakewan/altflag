@@ -13,17 +13,17 @@ func newAltFlagTestNoop() altFlagTest {
 
 type altFlagTestNoop struct{}
 
+// expectedErrorStringContaining implements altFlagTest.
+func (*altFlagTestNoop) expectedErrorStringContaining() *string {
+	return nil
+}
+
 // setupFlagSet implements altFlagTest.
 func (*altFlagTestNoop) setupFlagSet(f altflag.FlagSet) {}
 
 // clargs implements altFlagTest.
 func (*altFlagTestNoop) clargs() []string {
 	return []string{}
-}
-
-// expectedError implements altFlagTest.
-func (*altFlagTestNoop) expectedError() error {
-	return nil
 }
 
 // flagSetName implements altFlagTest.
