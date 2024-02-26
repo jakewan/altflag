@@ -66,5 +66,5 @@ func (aft *altFlagTestCountVar) setupFlagSet(f altflag.FlagSet) error {
 
 // verify implements altFlagTest.
 func (aft *altFlagTestCountVar) verify(t *testing.T, f altflag.FlagSet) {
-	assert.Equal(t, aft.myVar, aft.expectedCount)
+	assert.Equal(t, aft.expectedCount, aft.myVar)
 }

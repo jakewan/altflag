@@ -31,6 +31,18 @@ func TestParse(t *testing.T) {
 			nil,
 			nil,
 		),
+		"simple string var shortflag": newAltFlagTestSimpleStringVar(
+			"someStringVariable",
+			"s",
+			"Some usage string",
+			[]string{
+				"-s",
+				"some-string-value",
+			},
+			ptr("some-string-value"),
+			nil,
+			nil,
+		),
 		"simple string var no match": newAltFlagTestSimpleStringVar(
 			"foo",
 			"f",

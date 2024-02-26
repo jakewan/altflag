@@ -63,5 +63,5 @@ func (aft *altFlagTestSimpleStringVar) setupFlagSet(f altflag.FlagSet) error {
 
 // verify implements altFlagTest.
 func (aft *altFlagTestSimpleStringVar) verify(t *testing.T, f altflag.FlagSet) {
-	assert.Equal(t, aft.myVar, *aft.expectedValue)
+	assert.Equal(t, *aft.expectedValue, aft.myVar)
 }

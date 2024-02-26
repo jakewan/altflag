@@ -202,6 +202,8 @@ func (f *flagSet) findCountVar(givenArg string) (TargetVariable[int], error) {
 }
 
 func (f *flagSet) findStringVar(givenArg string) (TargetVariable[string], error) {
+	fmt.Printf("Given arg: %s\n", givenArg)
+	// givenArg could be either a long or short flag
 	if err := f.assertSingleMatch(givenArg); err != nil {
 		return nil, err
 	}
